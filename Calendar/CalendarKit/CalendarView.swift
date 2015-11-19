@@ -11,8 +11,9 @@ import UIKit
 // 12 months - base date - 12 months
 let kMonthRange = 12
 
-protocol CalendarViewDelegate: class {
+@objc protocol CalendarViewDelegate: class {
     func didSelectDate(date: NSDate)
+    optional func didChangeSelectedDates(selectedDates: [NSDate])
 }
 
 class CalendarView: UIView, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate, MonthCollectionCellDelegate {
@@ -47,17 +48,20 @@ class CalendarView: UIView, UICollectionViewDataSource, UICollectionViewDelegate
         }
     }
     
-    var selectedDate: NSDate? {
+    var selectedDates: [NSDate] = [NSDate]() {
         didSet {
             collectionView.reloadData()
             dispatch_async(dispatch_get_main_queue()){
                 self.moveToSelectedDate(false)
-                if self.delegate != nil {
-                    self.delegate!.didSelectDate(self.selectedDate!)
+                if self.delegate != nil && self.selectedDates.count > 0 {
+                    self.delegate!.didSelectDate(self.selectedDates.last!)
+                    self.delegate!.didChangeSelectedDates?(self.selectedDates)
                 }
             }
         }
     }
+
+    var allowMultipleSelections = false
     
     override func awakeFromNib() {
         let nib = UINib(nibName: "MonthCollectionCell", bundle: nil)
@@ -65,11 +69,21 @@ class CalendarView: UIView, UICollectionViewDataSource, UICollectionViewDelegate
     }
     
     class func instance(baseDate: NSDate, selectedDate: NSDate) -> CalendarView {
+        return instance(baseDate, selectedDates: [selectedDate])
+    }
+    
+    class func instance(baseDate: NSDate, selectedDates: [NSDate]) -> CalendarView {
         let calendarView = NSBundle.mainBundle().loadNibNamed("CalendarView", owner: nil, options: nil).first as! CalendarView
-        calendarView.selectedDate = selectedDate
+         selectedDates.forEach({ (date) -> () in
+            calendarView.selectedDates.append(date.startOfDay)
+        })
+        if calendarView.selectedDates.count == 0 {
+            calendarView.selectedDates.append(NSDate().startOfDay)
+        }
         calendarView.baseDate = baseDate
         return calendarView
     }
+
 
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return collectionData.count
@@ -82,8 +96,11 @@ class CalendarView: UIView, UICollectionViewDataSource, UICollectionViewDelegate
         cell.monthCellDelgate = self
         
         cell.logic = collectionData[indexPath.item]
-        if cell.logic!.isVisible(selectedDate!) {
-            cell.selectedDate = Date(date: selectedDate!)
+        cell.selectedDates.removeAll()
+        for date in selectedDates {
+            if cell.logic!.isVisible(date) {
+                cell.selectedDates.append(Date(date: date))
+            }
         }
         
         return cell
@@ -140,7 +157,7 @@ class CalendarView: UIView, UICollectionViewDataSource, UICollectionViewDelegate
         var index = -1
         for var i = 0; i < collectionData.count; i++  {
             let logic = collectionData[i]
-            if logic.containsDate(selectedDate!) {
+            if selectedDates.count > 0 && logic.containsDate(selectedDates.last!) {
                 index = i
                 break
             }
@@ -155,6 +172,25 @@ class CalendarView: UIView, UICollectionViewDataSource, UICollectionViewDelegate
     
     //MARK: Month cell delegate.
     func didSelect(date: Date) {
-        selectedDate = date.nsdate
+        if !allowMultipleSelections {
+            selectedDates[0] = date.nsdate.startOfDay
+        }
+        else {
+            selectedDates.append(date.nsdate.startOfDay)
+        }
+    }
+    
+    func didDeselect(date: Date) {
+        if selectedDates.count == 1 {
+            return
+        }
+        
+        for aDate in selectedDates {
+            if aDate.isSameDay(date.nsdate.startOfDay) {
+                if let index = selectedDates.indexOf(aDate) {
+                    selectedDates.removeAtIndex(index)
+                }
+            }
+        }
     }
 }

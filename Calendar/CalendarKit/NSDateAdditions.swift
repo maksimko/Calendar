@@ -91,6 +91,10 @@ extension NSDate {
     var hour: Int {
         return components.hour
     }
+        
+    func isSameDay(date: NSDate) -> Bool {
+        return !(self.year != date.year || self.month != date.month || self.day != date.day)
+    }
     
     //MARK: Private variable and methods.
     

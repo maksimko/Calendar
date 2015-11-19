@@ -10,6 +10,7 @@ import UIKit
 
 protocol MonthCollectionCellDelegate: class {
     func didSelect(date: Date)
+    func didDeselect(date: Date)
 }
 
 class MonthCollectionCell: UICollectionViewCell, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
@@ -31,7 +32,7 @@ class MonthCollectionCell: UICollectionViewCell, UICollectionViewDataSource, UIC
         }
     }
     
-    var selectedDate: Date? {
+    var selectedDates: [Date] = [Date]() {
         didSet {
             if collectionView != nil {
                 collectionView.reloadData()
@@ -78,8 +79,7 @@ class MonthCollectionCell: UICollectionViewCell, UICollectionViewDataSource, UIC
         let date = dates[indexPath.item]
         
         cell.date = (indexPath.item < dates.count) ? date : nil
-        cell.mark = (selectedDate == date)
-        
+        cell.mark = selectedDates.contains(date)
         cell.disabled = (indexPath.item < previousMonthVisibleDatesCount) ||
                         (indexPath.item >= previousMonthVisibleDatesCount
                             + currentMonthVisibleDatesCount)
@@ -89,10 +89,15 @@ class MonthCollectionCell: UICollectionViewCell, UICollectionViewDataSource, UIC
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         if monthCellDelgate != nil {
-            monthCellDelgate!.didSelect(dates[indexPath.item])
+            if selectedDates.contains(dates[indexPath.item]) {
+                monthCellDelgate!.didDeselect(dates[indexPath.item])
+            }
+            else {
+                monthCellDelgate!.didSelect(dates[indexPath.item])
+            }
         }
     }
-    
+
     func collectionView(collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, atIndexPath indexPath: NSIndexPath) -> UICollectionReusableView {
         return collectionView.dequeueReusableSupplementaryViewOfKind(UICollectionElementKindSectionHeader, withReuseIdentifier: "WeekHeaderView", forIndexPath: indexPath) 
     }

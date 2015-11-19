@@ -24,6 +24,9 @@ class ViewController: UIViewController, CalendarViewDelegate {
         let calendarView = CalendarView.instance(date, selectedDate: date)
         calendarView.delegate = self
         calendarView.translatesAutoresizingMaskIntoConstraints = false
+        
+//        calendarView.allowMultipleSelections = true   //Allows selection of multiple dates. Defaults to false
+        
         placeholderView.addSubview(calendarView)
         
         // Constraints for calendar view - Fill the parent view.
@@ -31,8 +34,22 @@ class ViewController: UIViewController, CalendarViewDelegate {
         placeholderView.addConstraints(NSLayoutConstraint.constraintsWithVisualFormat("V:|[calendarView]|", options: NSLayoutFormatOptions(rawValue: 0), metrics: nil, views: ["calendarView": calendarView]))
     }
     
+    //REQUIRED: Will be called whether allowMultipleSelections is true or false.
+    //Also will be called in cases of selection and deselection.
+    // Will return the last SELECTED date available
     func didSelectDate(date: NSDate) {
         print("\(date.year)-\(date.month)-\(date.day)")
     }
+    
+    //OPTIONAL: Will return all selected dates. Useful when allowMultipleSelections is true
+    /*
+    func didChangeSelectedDates(selectedDates: [NSDate]) {
+        print("Selected Dates: {")
+        selectedDates.forEach { (date) -> () in
+            print("\(date.year)-\(date.month)-\(date.day)")
+        }
+        print("}")
+    }
+    */
 }
 
