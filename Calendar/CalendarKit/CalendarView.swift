@@ -18,10 +18,10 @@ let kMonthRange = 12
 
 class CalendarView: UIView, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate, MonthCollectionCellDelegate {
     
-    @IBOutlet var monthYearLabel: UILabel!
-    @IBOutlet var collectionView: UICollectionView!
-    @IBOutlet var nextButton: UIButton!
-    @IBOutlet var previousButton: UIButton!
+    var monthYearLabel: UILabel!
+    var collectionView: UICollectionView!
+    var nextButton: UIButton!
+    var previousButton: UIButton!
     weak var delegate: CalendarViewDelegate?
 
     private var collectionData = [CalendarLogic]()
@@ -63,9 +63,52 @@ class CalendarView: UIView, UICollectionViewDataSource, UICollectionViewDelegate
 
     var allowMultipleSelections = false
     
-    override func awakeFromNib() {
+    init() {
+        super.init(frame: CGRect(x: 0, y: 0, width: 315, height: 268))
+        
+        self.backgroundColor = UIColor.redColor()
+        
+        let flow = UICollectionViewFlowLayout()
+        flow.itemSize = CGSize(width: 315, height: 224)
+        flow.scrollDirection = .Horizontal
+        flow.sectionInset = UIEdgeInsetsZero
+        flow.minimumInteritemSpacing = 0
+        flow.minimumLineSpacing = 0
+        
+        collectionView = UICollectionView(frame: CGRect(x: 0, y: 44, width: 315, height: 224), collectionViewLayout: flow)
+        collectionView.pagingEnabled = true
+        collectionView.bounces = true
+        
+        monthYearLabel = UILabel()
+        nextButton = UIButton()
+        previousButton = UIButton()
+        
+        nextButton.setTitle("Next", forState: .Normal)
+        previousButton.setTitle("Prev", forState: .Normal)
+        monthYearLabel.text = "Label"
+        
+        nextButton.addTarget(self, action: Selector("advanceToFollowingMonth:"), forControlEvents: .TouchUpInside)
+        previousButton.addTarget(self, action: Selector("retreatToPreviousMonth:"), forControlEvents: .TouchUpInside)
+
+        nextButton.frame = CGRect(x: 255, y: 0, width: 60, height: 44)
+        previousButton.frame = CGRect(x: 0, y: 0, width: 60, height: 44)
+
+        monthYearLabel.frame = CGRect(x: 60, y: 0, width: 195, height: 44)
+        
         let nib = UINib(nibName: "MonthCollectionCell", bundle: nil)
         self.collectionView.registerNib(nib, forCellWithReuseIdentifier: "MonthCollectionCell")
+        
+        collectionView.delegate = self
+        collectionView.dataSource = self
+        
+        addSubview(collectionView)
+        addSubview(nextButton)
+        addSubview(previousButton)
+        addSubview(monthYearLabel)
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
     }
     
     class func instance(baseDate: NSDate, selectedDate: NSDate) -> CalendarView {
@@ -73,7 +116,8 @@ class CalendarView: UIView, UICollectionViewDataSource, UICollectionViewDelegate
     }
     
     class func instance(baseDate: NSDate, selectedDates: [NSDate]) -> CalendarView {
-        let calendarView = NSBundle.mainBundle().loadNibNamed("CalendarView", owner: nil, options: nil).first as! CalendarView
+        let calendarView = CalendarView()
+        //NSBundle.mainBundle().loadNibNamed("CalendarView", owner: nil, options: nil).first as! CalendarView
          selectedDates.forEach({ (date) -> () in
             calendarView.selectedDates.append(date.startOfDay)
         })
